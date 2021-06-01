@@ -45,32 +45,32 @@ def calc_dicts():
     return p_dict, np_dict
 
 
-def beat_distributor(bam, ctbm):
-    for beat in range(1, 9):
-        try:
-            clauses = random.sample(bam[beat], 5)
-        except:
-            # print('ERROR', beat, bam[beat])
-            continue
-        for clause in clauses:
-            ctbm[clause] = beat
-            if beat < 8:
-                for key in range(beat+1, 9):
-                    if clause in bam[key]:
-                        bam[key].remove(clause)
-    # print(clause_to_beat_map)
-    safety_check = {}
-    for key in sorted(ctbm.keys()):
-        beat = ctbm[key]
-        # print(key, beat)
-        if beat not in safety_check.keys():
-            safety_check[beat] = 0
-        safety_check[beat] += 1
-    complete_list = True
-    for val in safety_check:
-        if val != 8:
-            complete_list = False
-    return ctbm, complete_list
+# def beat_distributor(bam, ctbm):
+#     for beat in range(1, 9):
+#         try:
+#             clauses = random.sample(bam[beat], 5)
+#         except:
+#             # print('ERROR', beat, bam[beat])
+#             continue
+#         for clause in clauses:
+#             ctbm[clause] = beat
+#             if beat < 8:
+#                 for key in range(beat+1, 9):
+#                     if clause in bam[key]:
+#                         bam[key].remove(clause)
+#     # print(clause_to_beat_map)
+#     safety_check = {}
+#     for key in sorted(ctbm.keys()):
+#         beat = ctbm[key]
+#         # print(key, beat)
+#         if beat not in safety_check.keys():
+#             safety_check[beat] = 0
+#         safety_check[beat] += 1
+#     complete_list = True
+#     for val in safety_check:
+#         if val != 8:
+#             complete_list = False
+#     return ctbm, complete_list
 
 
 def calc_ctt_matches():
@@ -112,7 +112,7 @@ def calc_ctt_matches():
                 t2val.remove(clause)
         if clause in remaining_clauses:
             remaining_clauses.remove(clause)
-        print(key, clause)
+        print('%d\t%d' % (key, clause))
         clause_to_beat_map[clause] = key
     print('----')
     for key, val in t1_matches.items():
@@ -122,14 +122,14 @@ def calc_ctt_matches():
                 t2val.remove(clause)
         if clause in remaining_clauses:
             remaining_clauses.remove(clause)
-        print(key, clause)
+        print('%d\t%d' % (key, clause))
         clause_to_beat_map[clause] = key
     print('----')
     for key, val in t2_matches.items():
         clause = random.choice(val)
         if clause in remaining_clauses:
             remaining_clauses.remove(clause)
-        print(key, clause)
+        print('%d\t%d' % (key, clause))
         clause_to_beat_map[clause] = key
     # print(t1_matches)
     # print(t2_matches)
@@ -150,32 +150,80 @@ def calc_ctt_matches():
             beat_availability_map[beat_in_clause].append(clause)
     # print(beat_availability_map)
 
+    val_rarity = {}
+    ctbm = {}
+    beat_counter = {}
+    for key, val in beat_availability_map.items():
+        print(key, len(val), val)
+        if key not in beat_counter.keys():
+            beat_counter[key] = 0
+        for clause in val:
+            if clause not in val_rarity.keys():
+                val_rarity[clause] = []
+            val_rarity[clause].append(key)
 
-    # val_rarity = {}
-    # for key, val in beat_availability_map.items():
-    #     print(key, len(val), val)
-    #     for clause in val:
-    #         if clause not in val_rarity.keys():
-    #             val_rarity[clause] = 0
-    #         val_rarity[clause] += 1
     # print(val_rarity)
-    all_delegated = False
-    trial = 0
-    while not all_delegated:
-        trial += 1
-        print('TRIAL', trial)
-        ctbm, success = beat_distributor(beat_availability_map.copy(), clause_to_beat_map.copy())
-        if success:
-            all_delegated = True
+    # print(beat_counter)
+    trial = 1
+    safety_break = 100000000  # = 1 hundred million
+    safety_checked = False
+    while not safety_checked:
+        for key, val in val_rarity.items():
+            try:
+                beat = random.choice(val)
+            except:
+                trial += 1
+                if trial % 500000 == 0:
+                    print('Still trying %d of %d, Godspeed' % (trial, safety_break))
+                if trial == safety_break:
+                    safety_checked = True
+                    print('Failed to find a combination in %d trials' % trial)
+                continue
+            # print(beat)
+            ctbm[key] = beat
+            beat_counter[beat] += 1
+            if beat_counter[beat] == 5:
+                for clause, beats in val_rarity.items():
+                    if beat in beats:
+                        val_rarity[clause].remove(beat)
+        val_total = 0
+        for val in beat_counter.values():
+            val_total += val
+        if val_total == 40:
+            safety_checked = True
+        else:
+            trial += 1
+        if trial % 500000 == 0:
+            print('Still trying %d of %d, Godspeed' % (trial, safety_break))
+        if trial == safety_break:
+            safety_checked = True
+            print('Failed to find a combination in %d trials' % trial)
 
+    print('Success! (under %d trials)' % trial)
     full_ctbm = {**clause_to_beat_map, **ctbm}
     for key in sorted(full_ctbm.keys()):
         beat = full_ctbm[key]
-        print(key, beat)
+        print('%d\t%d' % (key, beat))
+
+    # all_delegated = False
+    # trial = 0
+    # while not all_delegated:
+    #     trial += 1
+    #     print('TRIAL', trial)
+    #     ctbm, success = beat_distributor(beat_availability_map.copy(), clause_to_beat_map.copy())
+    #     if success:
+    #         all_delegated = True
+
+    #
+    # full_ctbm = {**clause_to_beat_map, **ctbm}
+    # for key in sorted(full_ctbm.keys()):
+    #     beat = full_ctbm[key]
+    #     print(key, beat)
     return c_mathes, t1_matches, t2_matches
 
 
 for person_idx in range(120, 180):
+    print(person_idx)
     perint_dict, nperint_dict = calc_dicts()
     # NON CONSTRAINED SHUFFLING FOR HCHHHC AND NHP CASES
     # --------------------------------------------------
