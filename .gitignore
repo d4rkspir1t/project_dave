@@ -1,3 +1,9 @@
+.idea
+onset_output
+vid_out
+src_data
+src_audio
+output*
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
