@@ -1,6 +1,8 @@
 .idea
 onset_output
+c_onset_output
 vid_out
+vidc_out
 src_data
 src_audio
 output*
